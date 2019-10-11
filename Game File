@@ -1,0 +1,208 @@
+//Using OOP in Processing, make a simple game that is played with the mouse!
+//INSTRUCTIONS:
+/* this game tests your reaction time. You will be presented with 4 white cards.
+ At a randomly determined time, the cards will 'flip' and display symbols. Your job is 
+ to click the "odd one out" (three of the cards will be display the same symbol), one
+ (the "target") will display another symbol. If you press the correct card within less 
+ than 1 second you win. If you take longer than one second, you loose. There are no additional
+ levels. You only have one chance to win. */
+
+//CLASSES
+//1: CARD - creates cards
+class Card { 
+  float xPosition; //properties
+  float yPosition;
+  int type; //target vs nontarget
+
+
+  Card(float tempxPosition, float tempyPosition, int tempType) { //constructor
+    xPosition = tempxPosition;
+    yPosition = tempyPosition;
+    type = tempType;
+  }
+
+  //Card methods:
+  void displayBack() { //display blank "back" of cards
+    rectMode(CENTER);
+    stroke(0);
+    fill(255); //white
+    rect(this.xPosition, this.yPosition, 300, 400); //draw card
+  }
+
+  void displayFront() { //display "front" of cards (after flip)
+    rectMode(CENTER);
+    stroke(0);
+    fill(255); //white
+    rect(this.xPosition, this.yPosition, 300, 400);
+    strokeWeight(20);
+      stroke(0);
+    if (this.type == 1) { // if type = target: draw cross on car
+      fill(0);
+      line(this.xPosition-50, this.yPosition, this.xPosition+50, this.yPosition);
+      line(this.xPosition, this.yPosition-50, this.xPosition, this.yPosition+50);
+    } else { // if type = non target: draw circle on card
+      noFill();
+      ellipse(this.xPosition, this.yPosition, 100, 100);
+    }
+    strokeWeight(5); //reset stroke weights
+  }
+
+  int getXLocation() { //get x cord of card
+    return (int) this.xPosition;
+  }
+
+  int getYLocation() { //get y card of card
+    return (int) this.yPosition;
+  }
+}
+
+//2: Cursor - create cursor
+class Cursor {
+  float xPosition;
+  float yPosition;
+
+  Cursor(float tempxPosition, float tempyPosition) { //constructor
+    xPosition = tempxPosition;
+    yPosition = tempyPosition;
+  }
+
+  //Cursor methods:
+  void display() { //displays cursor
+    stroke(255, 0, 0);
+    strokeWeight(5);
+    noFill();
+    ellipse(xPosition, yPosition, 50, 50);
+    ellipse(xPosition, yPosition, 75, 75);
+    line(xPosition-15, yPosition, xPosition-65, yPosition);
+    line(xPosition+15, yPosition, xPosition+65, yPosition);
+    line(xPosition, yPosition-15, xPosition, yPosition-65);
+    line(xPosition, yPosition+15, xPosition, yPosition+65);
+  }
+  void update() { //updates cursor location
+    this.xPosition = mouseX;
+    this.yPosition = mouseY;
+  }
+}
+
+
+//SETUP()
+void setup() {
+  size(2000, 2000);
+  background(0);
+  frameRate(60);
+}
+
+//global variables:
+Card[] myCards = new Card[4]; //create array of 4 cards
+int[][] cardLocations = {{500, 500}, {1500, 500}, {500, 1500}, {1500, 1500}}; //card locations
+int flipTime = (int) random(100, 700); //random time (num of frames) to flip cards
+Cursor currentCursor = new Cursor(mouseX, mouseY); //create cursor
+boolean flipped = false;
+int refresh = 0; //counts frame refreshes to determine when to flip 
+int timer = 0; //to time how many frame refreshes take place between  flip & response
+int randomType = (int) random(3); //determines which card has the target symbol
+boolean gameInstructions = true;
+
+//DRAW()
+void draw() {
+  //display instructions:
+  if (gameInstructions == true) {
+   gameInstructions();
+   
+  //begin game:
+  } else { 
+    //reset background
+    background(0); //to cover up moving cursor
+    
+    //create cards
+    for (int i = 0; i<myCards.length; i++) {
+      if (i == randomType) { //if target
+        myCards[i] = new Card(cardLocations[i][0], cardLocations[i][1], 1); //target
+      } else {
+        myCards[i] = new Card(cardLocations[i][0], cardLocations[i][1], 0); //nontargets
+      }
+    }
+    
+    //displays (back) cards
+    if (flipped == false) {
+      for (int j = 0; j<myCards.length; j++) {
+        myCards[j].displayBack();
+      }
+    }
+    
+    //flips cards 
+    if (refresh >= flipTime) {
+      for (int k = 0; k<myCards.length; k++) {
+        myCards[k].displayFront();
+      }
+      flipped = true;
+      timer++;
+    }
+    
+    //update cursor and display new cursor
+    currentCursor.update();
+    currentCursor.display();
+    
+    //once response is given by player (only possible after cards have flipped):
+    if ((mousePressed == true && gameInstructions == false) && flipped == true)  { //if mouse pressed 
+      gameOver(timer);
+    }
+    
+    refresh++; //counts refreshes (to be compared to random flip time)
+  }
+} //end of draw()
+
+
+
+//METHODS:
+void gameInstructions() {
+    background(0);
+    textSize(50);
+    text("INSTRUCTIONS:", 150, 200);
+    text("This game tests your reaction time.", 150, 400);
+    text("You will be presented with 4 white cards.", 150, 600);
+    text("At a randomly determined time, the cards will 'flip' and display symbols.", 150, 800);
+    text("Your job is to click the ODD ONE OUT.", 150, 1000);
+    text("If you press the correct card within less than 1 second you win.", 150, 1200);
+    text("If you take longer than one second, you loose.", 150, 1400);
+    text("There are no additional levels. You only have one chance to win.", 150, 1600);
+    text("Press mouse to continue...", 150, 1800);
+    if (mousePressed == true && gameInstructions == true) { //if mouse press to continue..
+      gameInstructions = false; //...change status
+    }
+}
+
+void gameOver (int timer) {
+  //get cursor location & target location
+  int currentXCursor = mouseX;
+  int currentYCursor = mouseY;
+  Card targetCard = myCards[randomType];
+  int xLocationTarget = targetCard.getXLocation();
+  int yLocationTarget = targetCard.getYLocation();
+
+  //check if mouse is pressed on target
+  if ((currentXCursor > xLocationTarget-150 && currentXCursor < xLocationTarget+150) && (currentYCursor > yLocationTarget-150 && currentYCursor < yLocationTarget+150)) {
+    background(0);
+    fill(255);
+    textSize(100);
+    if (timer <=60) { //60 frames  - if less than 60 frames (= 1sec) has passed since flip:
+      text("Win!", 150, 800); //display winning message...
+      textSize(75);
+      text("Your reaction time was under one second!", 150, 1000);
+      noLoop(); //end game
+    } else { //if response is given too late:
+      text("Too late!", 150, 800); //...otherwise display loosing message
+      textSize(75);
+      text("Your reaction time was over one second :(", 150, 1000);
+      noLoop(); //end game
+    } 
+  //if mouse is not pressed on target 
+  } else{
+    background(0);
+    fill(255);
+    textSize(100);
+    text("Missed Target!", 150, 800);
+    text("GAME OVER!", 150, 1000);
+    noLoop(); //end game
+  }
+}
